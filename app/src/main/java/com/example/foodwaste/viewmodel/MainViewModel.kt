@@ -15,15 +15,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repo = FoodRepository(AppDatabase.get(app).foodDao())
 
-    // 全部物品
+    // All items
     val allItems = repo.observeAll()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    // 3 天内过期的物品
+    // Items expiring within 3 days
     val expiringSoon = repo.observeExpiring(daysAhead = 3)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    // 添加示例数据
+    // Add sample data
     fun addSample() = viewModelScope.launch {
         repo.upsert(
             FoodItem(
