@@ -3,25 +3,29 @@ package com.example.foodwaste
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.foodwaste.ui.theme.MyApplicationTheme
 
+// 三个导航目的地
 sealed class Dest(val route: String, val label: String) {
     data object Inventory : Dest("inventory", "Inventory")
-    data object Recipes   : Dest("recipes",   "Recipes")
-    data object Shopping  : Dest("shopping",  "Shopping")
+    data object Recipes : Dest("recipes", "Recipes")
+    data object Shopping : Dest("shopping", "Shopping")
 }
 
 class MainActivity : ComponentActivity() {
@@ -36,60 +40,85 @@ class MainActivity : ComponentActivity() {
 fun FoodWasteAppUI() {
     MyApplicationTheme {
         val navController = rememberNavController()
-        val items = listOf(Dest.Inventory, Dest.Recipes, Dest.Shopping)
+        val currentBackStack by navController.currentBackStackEntryAsState()
+        val currentRoute = currentBackStack?.destination?.route
 
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Food Waste Reduction Tracker") }) },
+            topBar = {
+                TopAppBar(title = { Text("Food Waste Reduction Tracker") })
+            },
             bottomBar = {
-                NavigationBar {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
-                    items.forEach { dest ->
-                        NavigationBarItem(
-                            selected = currentDestination.isTopLevel(dest),
-                            onClick = {
-                                navController.navigate(dest.route) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                }
-                            },
-                            icon = { Icon(Icons.Default.Menu, contentDescription = null) },
-                            label = { Text(dest.label) }
-                        )
+                BottomAppBar(
+                    actions = {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Left button - Stock
+                            IconButton(onClick = { navController.navigate(Dest.Inventory.route) }) {
+                                Icon(
+                                    Icons.Default.List,
+                                    contentDescription = "Inventory",
+                                    tint = if (currentRoute == Dest.Inventory.route)
+                                        MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            // Scan button in the middle
+                            FloatingActionButton(
+                                onClick = { /* TODO: Open the QR code scanning interface */ },
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ) {
+                                Icon(Icons.Default.CameraAlt, contentDescription = "Scan")
+                            }
+
+                            // Right-hand button - Recipes
+                            IconButton(onClick = { navController.navigate(Dest.Recipes.route) }) {
+                                Icon(
+                                    Icons.Default.Restaurant,
+                                    contentDescription = "Recipes",
+                                    tint = if (currentRoute == Dest.Recipes.route)
+                                        MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
                     }
-                }
+                )
             }
-        ) { inner ->
+        ) { innerPadding ->
             NavHost(
                 navController = navController,
                 startDestination = Dest.Inventory.route,
-                modifier = Modifier.padding(inner)
+                modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Dest.Inventory.route) { InventoryScreen() }
-                composable(Dest.Recipes.route)   { RecipesScreen() }
-                composable(Dest.Shopping.route)  { ShoppingScreen() }
+                composable(Dest.Recipes.route) { RecipesScreen() }
+                composable(Dest.Shopping.route) { ShoppingScreen() }
             }
         }
     }
 }
 
-private fun NavDestination?.isTopLevel(dest: Dest): Boolean =
-    this?.hierarchy?.any { it.route == dest.route } == true
-
-/* ---------- 占位页面：先跑通 ---------- */
+/* ------------------ 页面内容 ------------------ */
 
 @Composable
 fun InventoryScreen() {
-    Surface { Text("Inventory — Managing contents of the refrigerator/pantry") }
+    InventoryCRUDScreen()  // ✅ 库存增删改查界面
 }
 
 @Composable
 fun RecipesScreen() {
-    Surface { Text("Recipes — Recipe recommendations based on existing ingredients") }
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Recipe Recommendations (placeholder)")
+    }
 }
 
 @Composable
 fun ShoppingScreen() {
-    Surface { Text("Shopping List — Automatically generated/manually edited shopping list") }
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Shopping List (placeholder)")
+    }
 }
