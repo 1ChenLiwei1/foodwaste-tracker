@@ -27,13 +27,13 @@ sealed class Dest(val route: String, val label: String) {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { FoodWasteApp() }
+        setContent { FoodWasteAppUI() }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FoodWasteApp() {
+fun FoodWasteAppUI() {
     MyApplicationTheme {
         val navController = rememberNavController()
         val items = listOf(Dest.Inventory, Dest.Recipes, Dest.Shopping)
