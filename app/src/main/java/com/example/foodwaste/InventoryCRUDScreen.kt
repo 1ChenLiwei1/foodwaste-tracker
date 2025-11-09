@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.foodwaste.data.local.FoodItem
+import org.threeten.bp.LocalDate
 
 @Composable
 fun InventoryCRUDScreen() {
@@ -38,7 +39,10 @@ fun InventoryCRUDScreen() {
             Button(
                 onClick = {
                     if (newName.isNotBlank()) {
-                        val newItem = FoodItem(name = newName)
+                        val newItem = FoodItem(
+                            name = newName,
+                            expiryDate = LocalDate.now().plusDays(7)
+                        )
                         foodList = foodList + newItem
                         newName = ""
                     }

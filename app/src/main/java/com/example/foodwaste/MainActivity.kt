@@ -3,9 +3,9 @@ package com.example.foodwaste
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Restaurant
@@ -15,10 +15,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.foodwaste.ui.InventoryViewModel
+import com.example.foodwaste.ui.screens.InventoryScreen
 import com.example.foodwaste.ui.theme.MyApplicationTheme
 
 // 三个导航目的地
@@ -29,24 +33,33 @@ sealed class Dest(val route: String, val label: String) {
 }
 
 class MainActivity : ComponentActivity() {
+
+    // ✅ 提升 ViewModel 到 Activity 层
+    private val inventoryVM: InventoryViewModel by viewModels {
+        val app = application as FoodWasteApp
+        viewModelFactory {
+            initializer { InventoryViewModel(app.repository) }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { FoodWasteAppUI() }
+        setContent {
+            FoodWasteAppUI(inventoryVM)
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FoodWasteAppUI() {
+fun FoodWasteAppUI(vm: InventoryViewModel) {
     MyApplicationTheme {
         val navController = rememberNavController()
         val currentBackStack by navController.currentBackStackEntryAsState()
         val currentRoute = currentBackStack?.destination?.route
 
         Scaffold(
-            topBar = {
-                TopAppBar(title = { Text("Food Waste Reduction Tracker") })
-            },
+            topBar = { TopAppBar(title = { Text("Food Waste Reduction Tracker") }) },
             bottomBar = {
                 BottomAppBar(
                     actions = {
@@ -57,7 +70,7 @@ fun FoodWasteAppUI() {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Left button - Stock
+                            // 左侧 - 库存
                             IconButton(onClick = { navController.navigate(Dest.Inventory.route) }) {
                                 Icon(
                                     Icons.Default.List,
@@ -67,15 +80,15 @@ fun FoodWasteAppUI() {
                                 )
                             }
 
-                            // Scan button in the middle
+                            // 中间扫码按钮
                             FloatingActionButton(
-                                onClick = { /* TODO: Open the QR code scanning interface */ },
+                                onClick = { /* TODO: 打开扫码界面 */ },
                                 containerColor = MaterialTheme.colorScheme.primary
                             ) {
                                 Icon(Icons.Default.CameraAlt, contentDescription = "Scan")
                             }
 
-                            // Right-hand button - Recipes
+                            // 右侧 - 食谱
                             IconButton(onClick = { navController.navigate(Dest.Recipes.route) }) {
                                 Icon(
                                     Icons.Default.Restaurant,
@@ -94,7 +107,8 @@ fun FoodWasteAppUI() {
                 startDestination = Dest.Inventory.route,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable(Dest.Inventory.route) { InventoryScreen() }
+                // ✅ 将 VM 传给库存页
+                composable(Dest.Inventory.route) { InventoryScreen(vm = vm) }
                 composable(Dest.Recipes.route) { RecipesScreen() }
                 composable(Dest.Shopping.route) { ShoppingScreen() }
             }
@@ -103,11 +117,6 @@ fun FoodWasteAppUI() {
 }
 
 /* ------------------ 页面内容 ------------------ */
-
-@Composable
-fun InventoryScreen() {
-    InventoryCRUDScreen()  // ✅ 库存增删改查界面
-}
 
 @Composable
 fun RecipesScreen() {

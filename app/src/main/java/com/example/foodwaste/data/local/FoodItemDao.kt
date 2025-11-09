@@ -1,12 +1,12 @@
 package com.example.foodwaste.data.local
 
 import androidx.room.*
-import com.example.foodwaste.data.model.FoodItem
 import kotlinx.coroutines.flow.Flow
 import org.threeten.bp.LocalDate
 
 @Dao
 interface FoodItemDao {
+
     @Query("""
         SELECT * FROM food_items
         ORDER BY 
@@ -27,4 +27,7 @@ interface FoodItemDao {
 
     @Delete
     suspend fun delete(item: FoodItem)
+
+    @Query("DELETE FROM food_items")
+    suspend fun clearAll()
 }

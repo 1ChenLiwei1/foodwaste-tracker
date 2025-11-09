@@ -9,15 +9,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.foodwaste.FoodWasteApp
 import com.example.foodwaste.data.local.FoodItem
+import com.example.foodwaste.ui.InventoryViewModel
 import org.threeten.bp.LocalDate
 import org.threeten.bp.temporal.ChronoUnit
 
 @Composable
-fun InventoryScreen() {
-    var foodList by remember { mutableStateOf(sampleFoodData()) }
+fun InventoryScreen(vm: InventoryViewModel) {
+    // 获取 ViewModel + Repository
+    val context = LocalContext.current.applicationContext as FoodWasteApp
+    val viewModel: InventoryViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { InventoryViewModel(context.repository) }
+        }
+    )
+    val foodList by viewModel.foodList.collectAsState()
+
     var showDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -39,46 +53,50 @@ fun InventoryScreen() {
             )
             Spacer(Modifier.height(8.dp))
 
-            LazyColumn {
-                items(foodList) { item ->
-                    val daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), item.expiryDate)
-                    val isExpiringSoon = daysLeft in 1..3
-                    val isExpired = daysLeft <= 0
+            if (foodList.isEmpty()) {
+                Text("No food items yet. Add one!", color = Color.Gray)
+            } else {
+                LazyColumn {
+                    items(foodList) { item ->
+                        val daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), item.expiryDate)
+                        val isExpiringSoon = daysLeft in 1..3
+                        val isExpired = daysLeft <= 0
 
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isExpired) Color(0xFFFFE0E0)
-                            else if (isExpiringSoon) Color(0xFFFFF3E0)
-                            else MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Row(
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(vertical = 4.dp)
+                                .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium),
+                            colors = CardDefaults.cardColors(
+                                containerColor = when {
+                                    isExpired -> Color(0xFFFFE0E0)
+                                    isExpiringSoon -> Color(0xFFFFF3E0)
+                                    else -> MaterialTheme.colorScheme.surface
+                                }
+                            )
                         ) {
-                            Column {
-                                Text(
-                                    text = item.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = if (isExpired || isExpiringSoon) Color.Red else Color.Unspecified
-                                )
-                                Text(
-                                    text = "Expires: ${item.expiryDate}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isExpired) Color.Red else Color.Gray
-                                )
-                            }
-                            TextButton(onClick = {
-                                foodList = foodList - item
-                            }) {
-                                Text("Delete")
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = item.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = if (isExpired || isExpiringSoon) Color.Red else Color.Unspecified
+                                    )
+                                    Text(
+                                        text = "Expires: ${item.expiryDate}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (isExpired) Color.Red else Color.Gray
+                                    )
+                                }
+                                TextButton(onClick = { viewModel.deleteItem(item) }) {
+                                    Text("Delete")
+                                }
                             }
                         }
                     }
@@ -90,7 +108,8 @@ fun InventoryScreen() {
             AddFoodDialog(
                 onAdd = { name, date ->
                     val newItem = FoodItem(name = name, expiryDate = date)
-                    foodList = foodList + newItem
+                    vm.addItem(newItem)
+                    showDialog = false
                 },
                 onDismiss = { showDialog = false }
             )
@@ -104,7 +123,7 @@ fun AddFoodDialog(onAdd: (String, LocalDate) -> Unit, onDismiss: () -> Unit) {
     var dateText by remember { mutableStateOf("") }
 
     AlertDialog(
-        onDismissRequest = { onDismiss() },
+        onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
                 val parsedDate = try {
@@ -112,17 +131,12 @@ fun AddFoodDialog(onAdd: (String, LocalDate) -> Unit, onDismiss: () -> Unit) {
                 } catch (e: Exception) {
                     LocalDate.now().plusDays(7)
                 }
-                if (name.isNotBlank()) {
-                    onAdd(name, parsedDate)
-                }
-                onDismiss()
+                if (name.isNotBlank()) onAdd(name, parsedDate)
             }) {
                 Text("Add")
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
         title = { Text("Add Food Item") },
         text = {
             Column {
@@ -140,13 +154,5 @@ fun AddFoodDialog(onAdd: (String, LocalDate) -> Unit, onDismiss: () -> Unit) {
                 )
             }
         }
-    )
-}
-
-private fun sampleFoodData(): List<FoodItem> {
-    return listOf(
-        FoodItem(name = "Milk", expiryDate = LocalDate.now().plusDays(1)),
-        FoodItem(name = "Eggs", expiryDate = LocalDate.now().plusDays(3)),
-        FoodItem(name = "Cheese", expiryDate = LocalDate.now().plusDays(7))
     )
 }
