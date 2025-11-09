@@ -44,6 +44,7 @@ android {
 
 dependencies {
     implementation(libs.threetenabp)
+    implementation("androidx.appcompat:appcompat:1.7.0")
     // Core
     implementation(libs.androidx.core.ktx)
 
@@ -84,6 +85,10 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
 
-    // ML Kit
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+// ML Kit & CameraX
+    implementation(libs.mlkit.barcode)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
 }

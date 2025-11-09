@@ -10,8 +10,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -23,7 +22,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.foodwaste.ui.InventoryViewModel
 import com.example.foodwaste.ui.screens.InventoryScreen
+import com.example.foodwaste.ui.screens.ScanScreen
 import com.example.foodwaste.ui.theme.MyApplicationTheme
+import kotlinx.coroutines.launch
 
 // 三个导航目的地
 sealed class Dest(val route: String, val label: String) {
@@ -34,7 +35,7 @@ sealed class Dest(val route: String, val label: String) {
 
 class MainActivity : ComponentActivity() {
 
-    // ✅ 提升 ViewModel 到 Activity 层
+    //  初始化 ViewModel（注入 Repository）
     private val inventoryVM: InventoryViewModel by viewModels {
         val app = application as FoodWasteApp
         viewModelFactory {
@@ -60,6 +61,7 @@ fun FoodWasteAppUI(vm: InventoryViewModel) {
 
         Scaffold(
             topBar = { TopAppBar(title = { Text("Food Waste Reduction Tracker") }) },
+
             bottomBar = {
                 BottomAppBar(
                     actions = {
@@ -71,7 +73,12 @@ fun FoodWasteAppUI(vm: InventoryViewModel) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // 左侧 - 库存
-                            IconButton(onClick = { navController.navigate(Dest.Inventory.route) }) {
+                            IconButton(onClick = {
+                                navController.navigate(Dest.Inventory.route) {
+                                    popUpTo(Dest.Inventory.route) { inclusive = false }
+                                    launchSingleTop = true
+                                }
+                            }) {
                                 Icon(
                                     Icons.Default.List,
                                     contentDescription = "Inventory",
@@ -82,14 +89,19 @@ fun FoodWasteAppUI(vm: InventoryViewModel) {
 
                             // 中间扫码按钮
                             FloatingActionButton(
-                                onClick = { /* TODO: 打开扫码界面 */ },
+                                onClick = { navController.navigate("scan") },
                                 containerColor = MaterialTheme.colorScheme.primary
                             ) {
                                 Icon(Icons.Default.CameraAlt, contentDescription = "Scan")
                             }
 
                             // 右侧 - 食谱
-                            IconButton(onClick = { navController.navigate(Dest.Recipes.route) }) {
+                            IconButton(onClick = {
+                                navController.navigate(Dest.Recipes.route) {
+                                    popUpTo(Dest.Inventory.route) { inclusive = false }
+                                    launchSingleTop = true
+                                }
+                            }) {
                                 Icon(
                                     Icons.Default.Restaurant,
                                     contentDescription = "Recipes",
@@ -107,10 +119,38 @@ fun FoodWasteAppUI(vm: InventoryViewModel) {
                 startDestination = Dest.Inventory.route,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                // ✅ 将 VM 传给库存页
+                //  库存页
                 composable(Dest.Inventory.route) { InventoryScreen(vm = vm) }
+
+                //  食谱页
                 composable(Dest.Recipes.route) { RecipesScreen() }
+
+                //  购物页
                 composable(Dest.Shopping.route) { ShoppingScreen() }
+
+                //  扫码页
+                composable("scan") {
+                    val snackbarHostState = remember { SnackbarHostState() }
+                    val scope = rememberCoroutineScope()
+
+                    Box(Modifier.fillMaxSize()) {
+                        ScanScreen(
+                            vm = vm,
+                            onFinish = { navController.popBackStack() },
+                            onItemAdded = { name ->
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("✅ Added: $name")
+                                }
+                                navController.popBackStack() // 自动返回库存页
+                            }
+                        )
+
+                        SnackbarHost(
+                            hostState = snackbarHostState,
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        )
+                    }
+                }
             }
         }
     }

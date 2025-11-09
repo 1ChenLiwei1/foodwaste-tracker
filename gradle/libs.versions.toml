@@ -50,8 +50,14 @@ threetenabp = { group = "com.jakewharton.threetenabp", name = "threetenabp", ver
 # WorkManager
 androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 
-# ML Kit Barcode Scanning
-mlkit-barcode = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "mlkit-barcode" }
+# --- ML Kit barcode ---
+mlkit-barcode = { group = "com.google.mlkit", name = "barcode-scanning", version = "17.2.0" }
+
+# --- CameraX ---
+androidx-camera-core = { group = "androidx.camera", name = "camera-core", version = "1.3.4" }
+androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version = "1.3.4" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version = "1.3.4" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version = "1.3.4" }
 
 # SQLite JDBC (for Room schema verification on Windows)
 sqlite-jdbc = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "sqlite-jdbc" }
@@ -60,3 +66,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
