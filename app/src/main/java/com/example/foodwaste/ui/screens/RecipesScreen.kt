@@ -1,5 +1,6 @@
 package com.example.foodwaste.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,10 +8,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.foodwaste.ui.InventoryViewModel
 
 @Composable
-fun RecipesScreen(vm: InventoryViewModel) {
+fun RecipesScreen(vm: InventoryViewModel, nav: NavController) {
 
     val canMake = vm.recipesUserCanMake()
     val missing = vm.recipesMissingIngredients()
@@ -22,12 +24,14 @@ fun RecipesScreen(vm: InventoryViewModel) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        item {
-            Text("You can make:", style = MaterialTheme.typography.titleLarge)
-        }
+        item { Text("You can make:", style = MaterialTheme.typography.titleLarge) }
 
         items(canMake) { recipe ->
-            RecipeCard(recipe.name, "All ingredients available!")
+            RecipeCard(
+                title = recipe.name,
+                subtitle = "All ingredients available!",
+                onClick = { nav.navigate("recipe_detail/${recipe.name}") }
+            )
         }
 
         item {
@@ -36,15 +40,21 @@ fun RecipesScreen(vm: InventoryViewModel) {
         }
 
         items(missing) { (recipe, missingList) ->
-            RecipeCard(recipe.name, "Missing: ${missingList.joinToString()}")
+            RecipeCard(
+                title = recipe.name,
+                subtitle = "Missing: ${missingList.joinToString()}",
+                onClick = { nav.navigate("recipe_detail/${recipe.name}") }
+            )
         }
     }
 }
 
 @Composable
-fun RecipeCard(title: String, subtitle: String) {
+fun RecipeCard(title: String, subtitle: String, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -53,3 +63,4 @@ fun RecipeCard(title: String, subtitle: String) {
         }
     }
 }
+

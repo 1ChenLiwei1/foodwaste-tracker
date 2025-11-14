@@ -26,7 +26,7 @@ import com.example.foodwaste.ui.screens.ScanScreen
 import com.example.foodwaste.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.launch
 import com.example.foodwaste.ui.screens.RecipesScreen
-
+import com.example.foodwaste.ui.screens.RecipeDetailScreen
 // 三个导航目的地
 sealed class Dest(val route: String, val label: String) {
     data object Inventory : Dest("inventory", "Inventory")
@@ -124,7 +124,9 @@ fun FoodWasteAppUI(vm: InventoryViewModel) {
                 composable(Dest.Inventory.route) { InventoryScreen(vm = vm) }
 
                 //  食谱页
-                composable(Dest.Recipes.route) { RecipesScreen(vm) }
+                composable(Dest.Recipes.route) {
+                    RecipesScreen(vm, navController)
+                }
 
                 //  购物页
                 composable(Dest.Shopping.route) { ShoppingScreen() }
@@ -151,6 +153,11 @@ fun FoodWasteAppUI(vm: InventoryViewModel) {
                             modifier = Modifier.align(Alignment.BottomCenter)
                         )
                     }
+                }
+                // 食谱详情页面
+                composable("recipe_detail/{name}") { backStackEntry ->
+                    val recipeName = backStackEntry.arguments?.getString("name") ?: ""
+                    RecipeDetailScreen(recipeName, vm, onBack = { navController.popBackStack() })
                 }
             }
         }
