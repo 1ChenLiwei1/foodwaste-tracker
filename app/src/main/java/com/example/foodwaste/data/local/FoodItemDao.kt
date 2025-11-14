@@ -30,4 +30,11 @@ interface FoodItemDao {
 
     @Query("DELETE FROM food_items")
     suspend fun clearAll()
+
+    @Query("""
+    SELECT * FROM food_items
+    WHERE expiryDate IS NOT NULL 
+    AND expiryDate BETWEEN :from AND :to
+""")
+    suspend fun getExpiringStatic(from: Long, to: Long): List<FoodItem>
 }

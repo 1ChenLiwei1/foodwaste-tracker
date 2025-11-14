@@ -25,6 +25,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication">
 
+        <!-- ✅ 过期提醒接收器（广播） -->
+        <receiver
+            android:name=".receiver.ExpiryReceiver"
+            android:exported="false" />
+
+        <!-- ✅ 主界面 Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -39,3 +45,4 @@
     </application>
 
 </manifest>
+
