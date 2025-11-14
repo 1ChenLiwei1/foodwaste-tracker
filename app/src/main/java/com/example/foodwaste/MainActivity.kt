@@ -25,6 +25,7 @@ import com.example.foodwaste.ui.screens.InventoryScreen
 import com.example.foodwaste.ui.screens.ScanScreen
 import com.example.foodwaste.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.launch
+import com.example.foodwaste.ui.screens.RecipesScreen
 
 // 三个导航目的地
 sealed class Dest(val route: String, val label: String) {
@@ -123,7 +124,7 @@ fun FoodWasteAppUI(vm: InventoryViewModel) {
                 composable(Dest.Inventory.route) { InventoryScreen(vm = vm) }
 
                 //  食谱页
-                composable(Dest.Recipes.route) { RecipesScreen() }
+                composable(Dest.Recipes.route) { RecipesScreen(vm) }
 
                 //  购物页
                 composable(Dest.Shopping.route) { ShoppingScreen() }
@@ -158,12 +159,7 @@ fun FoodWasteAppUI(vm: InventoryViewModel) {
 
 /* ------------------ 页面内容 ------------------ */
 
-@Composable
-fun RecipesScreen() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Recipe Recommendations (placeholder)")
-    }
-}
+
 
 @Composable
 fun ShoppingScreen() {
