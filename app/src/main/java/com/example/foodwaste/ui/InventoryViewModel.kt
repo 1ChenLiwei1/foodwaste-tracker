@@ -29,7 +29,6 @@ class InventoryViewModel(
         repository.delete(item)
     }
 
-
     val allRecipes = RecipeProvider.recipes
 
     /** 返回完全可做的食谱 */
@@ -48,7 +47,13 @@ class InventoryViewModel(
             recipe to missing
         }
     }
+
+    // 清空库存
+    fun clearAll() = viewModelScope.launch {
+        repository.clearAll()
+    }
 }
+
 
 
 

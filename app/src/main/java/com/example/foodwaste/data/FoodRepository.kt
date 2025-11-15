@@ -14,4 +14,6 @@ class FoodRepository(private val dao: FoodItemDao) {
     suspend fun upsert(item: FoodItem) = dao.upsert(item)
 
     suspend fun delete(item: FoodItem) = dao.delete(item)
+
+    suspend fun clearAll() = dao.clearAll()
 }

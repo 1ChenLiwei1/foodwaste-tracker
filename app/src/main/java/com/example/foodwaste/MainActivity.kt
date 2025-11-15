@@ -6,9 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,161 +14,200 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.*
 import com.example.foodwaste.ui.InventoryViewModel
-import com.example.foodwaste.ui.screens.InventoryScreen
-import com.example.foodwaste.ui.screens.ScanScreen
+import com.example.foodwaste.ui.ShoppingViewModel
+import com.example.foodwaste.ui.screens.*
 import com.example.foodwaste.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.launch
-import com.example.foodwaste.ui.screens.RecipesScreen
-import com.example.foodwaste.ui.screens.RecipeDetailScreen
-// 三个导航目的地
-sealed class Dest(val route: String, val label: String) {
-    data object Inventory : Dest("inventory", "Inventory")
-    data object Recipes : Dest("recipes", "Recipes")
-    data object Shopping : Dest("shopping", "Shopping")
+
+// ---------------------- 路由定义 ----------------------
+sealed class Dest(val route: String) {
+    data object Inventory : Dest("inventory")
+    data object Recipes : Dest("recipes")
+    data object Shopping : Dest("shopping")
+    data object Profile : Dest("profile")
 }
 
+// ---------------------- MainActivity ----------------------
 class MainActivity : ComponentActivity() {
 
-    //  初始化 ViewModel（注入 Repository）
     private val inventoryVM: InventoryViewModel by viewModels {
         val app = application as FoodWasteApp
-        viewModelFactory {
-            initializer { InventoryViewModel(app.repository) }
-        }
+        viewModelFactory { initializer { InventoryViewModel(app.repository) } }
+    }
+
+    private val shoppingVM: ShoppingViewModel by viewModels {
+        val app = application as FoodWasteApp
+        viewModelFactory { initializer { ShoppingViewModel(app.shoppingRepository) } }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
-            FoodWasteAppUI(inventoryVM)
+            FoodWasteAppUI(
+                inventoryVM = inventoryVM,
+                shoppingVM = shoppingVM
+            )
         }
     }
 }
 
+// ---------------------- UI Scaffold ----------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FoodWasteAppUI(vm: InventoryViewModel) {
+fun FoodWasteAppUI(
+    inventoryVM: InventoryViewModel,
+    shoppingVM: ShoppingViewModel
+) {
     MyApplicationTheme {
-        val navController = rememberNavController()
-        val currentBackStack by navController.currentBackStackEntryAsState()
-        val currentRoute = currentBackStack?.destination?.route
+
+        val nav = rememberNavController()
+        val backStack by nav.currentBackStackEntryAsState()
+        val current = backStack?.destination?.route
 
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Food Waste Reduction Tracker") }) },
+            topBar = {
+                TopAppBar(title = { Text("Food Waste Reduction Tracker") })
+            },
 
+            // ------------------ 底部导航条（方案 A） ------------------
             bottomBar = {
-                BottomAppBar(
-                    actions = {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                BottomAppBar {
+
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        // -------- 左 1：库存 --------
+                        IconButton(onClick = {
+                            nav.navigate(Dest.Inventory.route) { launchSingleTop = true }
+                        }) {
+                            Icon(
+                                Icons.Default.List,
+                                contentDescription = null,
+                                tint = if (current == Dest.Inventory.route)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        // -------- 左 2：食谱 --------
+                        IconButton(onClick = {
+                            nav.navigate(Dest.Recipes.route) { launchSingleTop = true }
+                        }) {
+                            Icon(
+                                Icons.Default.Restaurant,
+                                contentDescription = null,
+                                tint = if (current == Dest.Recipes.route)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        // -------- 中间大按钮：扫码 --------
+                        FloatingActionButton(
+                            onClick = { nav.navigate("scan") },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(70.dp)
                         ) {
-                            // 左侧 - 库存
-                            IconButton(onClick = {
-                                navController.navigate(Dest.Inventory.route) {
-                                    popUpTo(Dest.Inventory.route) { inclusive = false }
-                                    launchSingleTop = true
-                                }
-                            }) {
-                                Icon(
-                                    Icons.Default.List,
-                                    contentDescription = "Inventory",
-                                    tint = if (currentRoute == Dest.Inventory.route)
-                                        MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
+                            Icon(Icons.Default.CameraAlt, null, Modifier.size(32.dp))
+                        }
 
-                            // 中间扫码按钮
-                            FloatingActionButton(
-                                onClick = { navController.navigate("scan") },
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = "Scan")
-                            }
+                        // -------- 右 1：购物清单 --------
+                        IconButton(onClick = {
+                            nav.navigate(Dest.Shopping.route) { launchSingleTop = true }
+                        }) {
+                            Icon(
+                                Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                tint = if (current == Dest.Shopping.route)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
 
-                            // 右侧 - 食谱
-                            IconButton(onClick = {
-                                navController.navigate(Dest.Recipes.route) {
-                                    popUpTo(Dest.Inventory.route) { inclusive = false }
-                                    launchSingleTop = true
-                                }
-                            }) {
-                                Icon(
-                                    Icons.Default.Restaurant,
-                                    contentDescription = "Recipes",
-                                    tint = if (currentRoute == Dest.Recipes.route)
-                                        MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
+                        // -------- 右 2：个人中心 --------
+                        IconButton(onClick = {
+                            nav.navigate(Dest.Profile.route) { launchSingleTop = true }
+                        }) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = if (current == Dest.Profile.route)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     }
-                )
+                }
             }
-        ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = Dest.Inventory.route,
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                //  库存页
-                composable(Dest.Inventory.route) { InventoryScreen(vm = vm) }
+        ) { inner ->
 
-                //  食谱页
-                composable(Dest.Recipes.route) {
-                    RecipesScreen(vm, navController)
+            NavHost(
+                navController = nav,
+                startDestination = Dest.Inventory.route,
+                modifier = Modifier.padding(inner)
+            ) {
+
+                composable(Dest.Inventory.route) {
+                    InventoryScreen(vm = inventoryVM)
                 }
 
-                //  购物页
-                composable(Dest.Shopping.route) { ShoppingScreen() }
+                composable(Dest.Recipes.route) {
+                    RecipesScreen(inventoryVM, nav)
+                }
 
-                //  扫码页
+                composable(Dest.Shopping.route) {
+                    ShoppingScreen(shoppingVM)
+                }
+
+                // ---------- 扫码 ----------
                 composable("scan") {
-                    val snackbarHostState = remember { SnackbarHostState() }
+
+                    val snackbar = remember { SnackbarHostState() }
                     val scope = rememberCoroutineScope()
 
                     Box(Modifier.fillMaxSize()) {
+
                         ScanScreen(
-                            vm = vm,
-                            onFinish = { navController.popBackStack() },
+                            vm = inventoryVM,
+                            onFinish = { nav.popBackStack() },
                             onItemAdded = { name ->
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("✅ Added: $name")
+                                    snackbar.showSnackbar("Added: $name")
                                 }
-                                navController.popBackStack() // 自动返回库存页
+                                nav.popBackStack()
                             }
                         )
 
                         SnackbarHost(
-                            hostState = snackbarHostState,
-                            modifier = Modifier.align(Alignment.BottomCenter)
+                            snackbar,
+                            Modifier.align(Alignment.BottomCenter)
                         )
                     }
                 }
-                // 食谱详情页面
-                composable("recipe_detail/{name}") { backStackEntry ->
-                    val recipeName = backStackEntry.arguments?.getString("name") ?: ""
-                    RecipeDetailScreen(recipeName, vm, onBack = { navController.popBackStack() })
+
+                // ---------- 食谱详情 ----------
+                composable("recipe_detail/{name}") { entry ->
+                    val name = entry.arguments?.getString("name") ?: ""
+                    RecipeDetailScreen(
+                        recipeName = name,
+                        vm = inventoryVM,
+                        onBack = { nav.popBackStack() }
+                    )
+                }
+
+                // ---------- Profile ----------
+                composable(Dest.Profile.route) {
+                    ProfileScreen()
                 }
             }
         }
-    }
-}
-
-/* ------------------ 页面内容 ------------------ */
-
-
-
-@Composable
-fun ShoppingScreen() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Shopping List (placeholder)")
     }
 }

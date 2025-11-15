@@ -2,14 +2,18 @@ package com.example.foodwaste.data.local
 
 import android.content.Context
 import androidx.room.*
-import androidx.room.migration.Migration          // ✅ 导入 Migration
-import androidx.sqlite.db.SupportSQLiteDatabase // ✅ 导入 SupportSQLiteDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room.Database
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
-@Database(entities = [FoodItem::class], version = 2, exportSchema = true)
+@Database(entities = [FoodItem::class, ShoppingItem::class ], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun foodItemDao(): FoodItemDao
+    abstract fun shoppingDao(): ShoppingDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null

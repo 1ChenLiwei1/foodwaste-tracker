@@ -93,5 +93,7 @@ dependencies {
     implementation(libs.androidx.camera.view)
 
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
 
 }
