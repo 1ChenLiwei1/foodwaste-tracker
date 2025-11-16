@@ -83,7 +83,6 @@ fun FoodWasteAppUI(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         // -------- 左 1：库存 --------
                         IconButton(onClick = {
                             nav.navigate(Dest.Inventory.route) { launchSingleTop = true }
@@ -207,6 +206,7 @@ fun FoodWasteAppUI(
                 composable(Dest.Profile.route) {
                     ProfileScreen()
                 }
+                composable("ai_recipes") { AiRecipeScreen(inventoryVM) }
             }
         }
     }

@@ -6,32 +6,39 @@ object RecipeProvider {
 
     val recipes = listOf(
         Recipe(
-            name = "Milk Omelette",
-            ingredients = listOf("Milk", "Eggs"),
+            name = "Scrambled Eggs",
+            ingredients = listOf("egg", "salt", "butter"),
+            category = "Breakfast",
             steps = listOf(
-                "Beat eggs with milk",
-                "Heat pan and add oil",
-                "Cook egg mixture until firm"
+                "Crack eggs into a bowl",
+                "Add salt and beat well",
+                "Melt butter in pan",
+                "Cook eggs on medium heat while stirring"
+            )
+        ),
+        Recipe(
+            name = "Milk Tea",
+            ingredients = listOf("milk", "tea", "sugar"),
+            category = "Drink",
+            steps = listOf(
+                "Boil water and brew tea",
+                "Add hot milk",
+                "Sweeten with sugar"
             )
         ),
         Recipe(
             name = "Fried Rice",
-            ingredients = listOf("Rice", "Eggs"),
+            ingredients = listOf("rice", "egg", "oil", "salt"),
+            category = "Lunch",
             steps = listOf(
-                "Cook rice beforehand",
-                "Stir-fry eggs",
-                "Add rice and seasoning"
-            )
-        ),
-        Recipe(
-            name = "Cheese Toast",
-            ingredients = listOf("Cheese"),
-            steps = listOf(
-                "Place cheese on bread",
-                "Heat in toaster until melted"
+                "Heat oil in pan",
+                "Add egg and scramble",
+                "Add rice and stir fry",
+                "Season with salt"
             )
         )
     )
 }
+
 
 
