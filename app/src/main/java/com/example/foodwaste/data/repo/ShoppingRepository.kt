@@ -12,10 +12,11 @@ class ShoppingRepository(private val dao: ShoppingDao) {
         dao.upsert(ShoppingItem(name = name))
 
     suspend fun toggle(item: ShoppingItem) =
-        dao.upsert(item.copy(isChecked = !item.isChecked))
+        dao.upsert(item.copy(checked = !item.checked))
 
     suspend fun delete(item: ShoppingItem) =
         dao.delete(item)
 
     suspend fun clearAll() = dao.clearAll()
 }
+

@@ -6,7 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,7 +48,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             FoodWasteAppUI(
                 inventoryVM = inventoryVM,
@@ -69,13 +72,13 @@ fun FoodWasteAppUI(
 
         Scaffold(
             topBar = {
-                TopAppBar(title = { Text("Food Waste Reduction Tracker") })
+                TopAppBar(
+                    title = { Text("Food Waste Reduction Tracker") }
+                )
             },
 
-            // ------------------ 底部导航条（方案 A） ------------------
             bottomBar = {
                 BottomAppBar {
-
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -83,13 +86,16 @@ fun FoodWasteAppUI(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+
                         // -------- 左 1：库存 --------
                         IconButton(onClick = {
-                            nav.navigate(Dest.Inventory.route) { launchSingleTop = true }
+                            nav.navigate(Dest.Inventory.route) {
+                                launchSingleTop = true
+                            }
                         }) {
                             Icon(
                                 Icons.Default.List,
-                                contentDescription = null,
+                                contentDescription = "Inventory",
                                 tint = if (current == Dest.Inventory.route)
                                     MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface
@@ -98,11 +104,13 @@ fun FoodWasteAppUI(
 
                         // -------- 左 2：食谱 --------
                         IconButton(onClick = {
-                            nav.navigate(Dest.Recipes.route) { launchSingleTop = true }
+                            nav.navigate(Dest.Recipes.route) {
+                                launchSingleTop = true
+                            }
                         }) {
                             Icon(
                                 Icons.Default.Restaurant,
-                                contentDescription = null,
+                                contentDescription = "Recipes",
                                 tint = if (current == Dest.Recipes.route)
                                     MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface
@@ -120,11 +128,13 @@ fun FoodWasteAppUI(
 
                         // -------- 右 1：购物清单 --------
                         IconButton(onClick = {
-                            nav.navigate(Dest.Shopping.route) { launchSingleTop = true }
+                            nav.navigate(Dest.Shopping.route) {
+                                launchSingleTop = true
+                            }
                         }) {
                             Icon(
                                 Icons.Default.ShoppingCart,
-                                contentDescription = null,
+                                contentDescription = "Shopping",
                                 tint = if (current == Dest.Shopping.route)
                                     MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface
@@ -133,11 +143,13 @@ fun FoodWasteAppUI(
 
                         // -------- 右 2：个人中心 --------
                         IconButton(onClick = {
-                            nav.navigate(Dest.Profile.route) { launchSingleTop = true }
+                            nav.navigate(Dest.Profile.route) {
+                                launchSingleTop = true
+                            }
                         }) {
                             Icon(
                                 Icons.Default.Person,
-                                contentDescription = null,
+                                contentDescription = "Profile",
                                 tint = if (current == Dest.Profile.route)
                                     MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface
@@ -153,27 +165,35 @@ fun FoodWasteAppUI(
                 startDestination = Dest.Inventory.route,
                 modifier = Modifier.padding(inner)
             ) {
-
+                // 库存页
                 composable(Dest.Inventory.route) {
                     InventoryScreen(vm = inventoryVM)
                 }
 
+                // 食谱页
                 composable(Dest.Recipes.route) {
-                    RecipesScreen(inventoryVM, nav)
+                    RecipesScreen(vm = inventoryVM, nav = nav)
                 }
 
+                // 购物清单页
                 composable(Dest.Shopping.route) {
-                    ShoppingScreen(shoppingVM)
+                    ShoppingScreen(vm = shoppingVM)
                 }
 
-                // ---------- 扫码 ----------
-                composable("scan") {
+                // Profile
+                composable(Dest.Profile.route) {
+                    ProfileScreen(
+                        inventoryVM = inventoryVM,
+                        shoppingVM = shoppingVM
+                    )
+                }
 
+                // 扫码页（用你原来的 ScanScreen 逻辑）
+                composable("scan") {
                     val snackbar = remember { SnackbarHostState() }
                     val scope = rememberCoroutineScope()
 
                     Box(Modifier.fillMaxSize()) {
-
                         ScanScreen(
                             vm = inventoryVM,
                             onFinish = { nav.popBackStack() },
@@ -186,13 +206,13 @@ fun FoodWasteAppUI(
                         )
 
                         SnackbarHost(
-                            snackbar,
-                            Modifier.align(Alignment.BottomCenter)
+                            hostState = snackbar,
+                            modifier = Modifier.align(Alignment.BottomCenter)
                         )
                     }
                 }
 
-                // ---------- 食谱详情 ----------
+                // 食谱详情
                 composable("recipe_detail/{name}") { entry ->
                     val name = entry.arguments?.getString("name") ?: ""
                     RecipeDetailScreen(
@@ -202,11 +222,10 @@ fun FoodWasteAppUI(
                     )
                 }
 
-                // ---------- Profile ----------
-                composable(Dest.Profile.route) {
-                    ProfileScreen()
+                // AI 菜谱页
+                composable("ai_recipes") {
+                    AiRecipeScreen(vm = inventoryVM, onBack = { nav.popBackStack() })
                 }
-                composable("ai_recipes") { AiRecipeScreen(inventoryVM) }
             }
         }
     }
