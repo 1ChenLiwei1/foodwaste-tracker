@@ -1,19 +1,16 @@
-@file:OptIn(androidx.camera.core.ExperimentalGetImage::class)
-
 package com.example.foodwaste.ui.screens
 
 import android.Manifest
-import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.util.Log
-import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -24,173 +21,161 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import androidx.appcompat.app.AlertDialog
-import com.example.foodwaste.data.local.FoodItem
 import com.example.foodwaste.ui.InventoryViewModel
+import com.example.foodwaste.data.local.FoodItem
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import org.threeten.bp.LocalDate
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import androidx.compose.foundation.layout.padding
 
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalGetImage::class)
 @Composable
 fun ScanScreen(
     vm: InventoryViewModel,
     onFinish: () -> Unit,
-    onItemAdded: (String) -> Unit = {}
+    onItemAdded: (String) -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = context as LifecycleOwner
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
-    val scope = rememberCoroutineScope()
 
     var hasPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
-                context, Manifest.permission.CAMERA
+                context,
+                Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
 
-    LaunchedEffect(Unit) {
-        if (!hasPermission) {
-            Toast.makeText(context, "Please grant camera permission manually.", Toast.LENGTH_LONG).show()
-        }
-    }
+    // MLKit 条形码选项
+    val options = BarcodeScannerOptions.Builder()
+        .setBarcodeFormats(
+            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_EAN_13,
+            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE
+        )
+        .build()
+
+    val scanner = BarcodeScanning.getClient(options)
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Scan Barcode") },
                 navigationIcon = {
-                    IconButton(onClick = { onFinish() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = onFinish) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = null)
                     }
                 }
             )
         }
     ) { padding ->
-        if (hasPermission) {
-            Box(Modifier.fillMaxSize().padding(padding)) {
-                AndroidView(factory = { ctx ->
-                    val previewView = PreviewView(ctx)
-                    val cameraProvider = cameraProviderFuture.get()
-                    val preview = androidx.camera.core.Preview.Builder().build().also {
-                        it.setSurfaceProvider(previewView.surfaceProvider)
+
+        if (!hasPermission) {
+            Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Camera permission required.")
+            }
+            return@Scaffold
+        }
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            AndroidView(factory = { ctx ->
+                val previewView = PreviewView(ctx)
+
+                val cameraProvider = cameraProviderFuture.get()
+
+                val preview = androidx.camera.core.Preview.Builder()
+                    .build()
+                    .apply {
+                        setSurfaceProvider(previewView.surfaceProvider)
                     }
 
-                    val analyzer = ImageAnalysis.Builder().build().also {
-                        it.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
-                            processImageProxy(imageProxy, vm, ctx, scope, onItemAdded)
+                val analyzer = ImageAnalysis.Builder()
+                    .build()
+                    .apply {
+                        setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
+                            analyzeBarcode(
+                                imageProxy,
+                                scanner,
+                                vm,
+                                scope,
+                                onItemAdded,
+                                onFinish
+                            )
                         }
                     }
 
-                    try {
-                        cameraProvider.unbindAll()
-                        cameraProvider.bindToLifecycle(
-                            lifecycleOwner,
-                            CameraSelector.DEFAULT_BACK_CAMERA,
-                            preview,
-                            analyzer
-                        )
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                try {
+                    cameraProvider.unbindAll()
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        preview,
+                        analyzer
+                    )
+                } catch (e: Exception) {
+                    Log.e("CameraX", "Camera binding failed", e)
+                }
 
-                    previewView
-                })
-            }
-        } else {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Camera permission not granted.")
-            }
+                previewView
+            })
         }
     }
 }
 
-private fun loadBarcodeMap(context: android.content.Context): Map<String, String> {
-    return try {
-        val inputStream = context.assets.open("barcode_map.json")
-        val reader = BufferedReader(InputStreamReader(inputStream))
-        val jsonString = reader.readText()
-        reader.close()
-        val jsonObject = JSONObject(jsonString)
-        val map = mutableMapOf<String, String>()
-        val keys = jsonObject.keys()
-        while (keys.hasNext()) {
-            val key = keys.next()
-            map[key] = jsonObject.getString(key)
-        }
-        map
-    } catch (e: Exception) {
-        e.printStackTrace()
-        emptyMap()
-    }
-}
-
-/**
- *  图像分析逻辑：调用 ML Kit 扫描条码
- */
-private fun processImageProxy(
-    imageProxy: ImageProxy,
+@OptIn(ExperimentalGetImage::class)
+private fun analyzeBarcode(
+    proxy: ImageProxy,
+    scanner: com.google.mlkit.vision.barcode.BarcodeScanner,
     vm: InventoryViewModel,
-    context: android.content.Context,
     scope: kotlinx.coroutines.CoroutineScope,
-    onItemAdded: (String) -> Unit
+    onItemAdded: (String) -> Unit,
+    onFinish: () -> Unit
 ) {
-    val mediaImage = imageProxy.image ?: run {
-        imageProxy.close()
-        return
-    }
-    val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-    val scanner = BarcodeScanning.getClient()
+    val media = proxy.image ?: return proxy.close()
+    val image = InputImage.fromMediaImage(media, proxy.imageInfo.rotationDegrees)
+
     scanner.process(image)
-        .addOnSuccessListener { barcodes ->
-            for (barcode in barcodes) {
-                handleBarcode(barcode, vm, context, scope, onItemAdded)
-            }
-        }
-        .addOnFailureListener { e -> Log.e("MLKit", "Error: ${e.message}") }
-        .addOnCompleteListener { imageProxy.close() }
-}
+        .addOnSuccessListener { results ->
+            if (results.isNotEmpty()) {
+                val barcode = results.first()
+                val code = barcode.rawValue ?: ""
 
-private fun handleBarcode(
-    barcode: Barcode,
-    vm: InventoryViewModel,
-    context: android.content.Context,
-    scope: kotlinx.coroutines.CoroutineScope,
-    onItemAdded: (String) -> Unit
-) {
-    val rawValue = barcode.rawValue ?: return
-    val numeric = rawValue.filter { it.isDigit() }
-    val barcodeMap = loadBarcodeMap(context)
-    val mappedName = barcodeMap[numeric] ?: "Unknown Item ($numeric)"
+                Log.d("SCAN", "Found barcode: $code")
 
-    if (lastScannedCode == numeric) return
-    lastScannedCode = numeric
+                val name = when {
+                    code.startsWith("47") -> "Eggs"
+                    code.startsWith("88") -> "Milk"
+                    else -> "Unknown Item"
+                }
 
-    (context as? ComponentActivity)?.runOnUiThread {
-        AlertDialog.Builder(context)
-            .setTitle("Add Item")
-            .setMessage("Add \"$mappedName\" to inventory?")
-            .setPositiveButton("Add") { _: DialogInterface, _: Int ->
                 scope.launch {
                     vm.addItem(
-                        FoodItem(name = mappedName, expiryDate = LocalDate.now().plusDays(7))
+                        FoodItem(
+                            name = name,
+                            expiryDate = LocalDate.now().plusDays(7)
+                        )
                     )
-                    onItemAdded(mappedName)
                 }
+
+                onItemAdded(name)
+                onFinish()
             }
-            .setNegativeButton("Cancel", null)
-            .setOnDismissListener { _: DialogInterface -> lastScannedCode = null }
-            .show()
-    }
+        }
+        .addOnCompleteListener {
+            proxy.close()
+        }
 }
 
-private var lastScannedCode: String? = null
+
 

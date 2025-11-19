@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
 }
 
 android {
@@ -18,7 +19,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // ---- Gemini API Key ----
+        // Gemini API Key
         val geminiKey = project.findProperty("GEMINI_API_KEY") as String? ?: ""
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     }
@@ -33,27 +34,29 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        jvmToolchain(17)
     }
 }
 
-kotlin {
-    jvmToolchain(17)
-}
-
 dependencies {
+
     implementation(libs.threetenabp)
     implementation("androidx.appcompat:appcompat:1.7.0")
 
+    // Jetpack Core
     implementation(libs.androidx.core.ktx)
+
+    // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.activity.compose)
     implementation("androidx.compose.material:material-icons-extended")
+
+    // Activity Compose
+    implementation(libs.androidx.activity.compose)
 
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -70,24 +73,38 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
-    // CameraX
-    implementation("androidx.camera:camera-core:1.3.4")
-    implementation("androidx.camera:camera-camera2:1.3.4")
-    implementation("androidx.camera:camera-lifecycle:1.3.4")
-    implementation("androidx.camera:camera-view:1.3.4")
+    // WorkManager
+    implementation(libs.androidx.work.runtime)
 
-    // MLKit
+    // ML Kit Barcode
     implementation(libs.mlkit.barcode)
 
-    // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    // CameraX
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
 
-    // Coil
+    // Ktor HTTP Client (OpenFoodFacts)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+
+    // Coil Image Loader
     implementation("io.coil-kt:coil-compose:2.4.0")
 
-    // Retrofit + Gson
+    // Retrofit (optional, used somewhere in your code)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // SQLite JDBC (Room schema verification)
+    implementation(libs.sqlite.jdbc)
+
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
+
 
 
