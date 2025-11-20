@@ -3,6 +3,7 @@ package com.example.foodwaste.ui.screens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.util.Log
+import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -21,14 +22,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.example.foodwaste.ui.InventoryViewModel
 import com.example.foodwaste.data.local.FoodItem
+import com.example.foodwaste.data.product.ProductLookup
+import com.example.foodwaste.ui.InventoryViewModel
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.threeten.bp.LocalDate
-import androidx.compose.foundation.layout.padding
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGetImage::class)
 @Composable
@@ -40,6 +43,7 @@ fun ScanScreen(
     val context = LocalContext.current
     val lifecycleOwner = context as LifecycleOwner
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
+    val scope = rememberCoroutineScope()
 
     var hasPermission by remember {
         mutableStateOf(
@@ -50,16 +54,15 @@ fun ScanScreen(
         )
     }
 
-    // MLKit 条形码选项
-    val options = BarcodeScannerOptions.Builder()
-        .setBarcodeFormats(
-            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_EAN_13,
-            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE
-        )
-        .build()
-
-    val scanner = BarcodeScanning.getClient(options)
-    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        if (!hasPermission) {
+            Toast.makeText(
+                context,
+                "Please grant Camera permission in system settings.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -67,7 +70,7 @@ fun ScanScreen(
                 title = { Text("Scan Barcode") },
                 navigationIcon = {
                     IconButton(onClick = onFinish) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -76,106 +79,137 @@ fun ScanScreen(
 
         if (!hasPermission) {
             Box(
-                Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize(),
+            contentAlignment = Alignment.Center
+            ) {
+                Text("Camera permission not granted.")
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Camera permission required.")
-            }
-            return@Scaffold
-        }
 
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            AndroidView(factory = { ctx ->
-                val previewView = PreviewView(ctx)
+                AndroidView(factory = { ctx ->
+                    val previewView = PreviewView(ctx)
 
-                val cameraProvider = cameraProviderFuture.get()
-
-                val preview = androidx.camera.core.Preview.Builder()
-                    .build()
-                    .apply {
-                        setSurfaceProvider(previewView.surfaceProvider)
-                    }
-
-                val analyzer = ImageAnalysis.Builder()
-                    .build()
-                    .apply {
-                        setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
-                            analyzeBarcode(
-                                imageProxy,
-                                scanner,
-                                vm,
-                                scope,
-                                onItemAdded,
-                                onFinish
-                            )
+                    val cameraProvider = cameraProviderFuture.get()
+                    val preview = androidx.camera.core.Preview.Builder()
+                        .build()
+                        .also {
+                            it.setSurfaceProvider(previewView.surfaceProvider)
                         }
+
+                    val analyzer = ImageAnalysis.Builder()
+                        .build()
+                        .also { analysis ->
+                            analysis.setAnalyzer(
+                                ContextCompat.getMainExecutor(ctx)
+                            ) { imageProxy ->
+                                processImageProxy(
+                                    imageProxy = imageProxy,
+                                    vm = vm,
+                                    context = ctx,
+                                    scope = scope,
+                                    onItemAdded = onItemAdded
+                                )
+                            }
+                        }
+
+                    try {
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            CameraSelector.DEFAULT_BACK_CAMERA,
+                            preview,
+                            analyzer
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
 
-                try {
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        analyzer
-                    )
-                } catch (e: Exception) {
-                    Log.e("CameraX", "Camera binding failed", e)
-                }
-
-                previewView
-            })
+                    previewView
+                })
+            }
         }
     }
 }
 
+private var lastHandledCode: String? = null
+
 @OptIn(ExperimentalGetImage::class)
-private fun analyzeBarcode(
-    proxy: ImageProxy,
-    scanner: com.google.mlkit.vision.barcode.BarcodeScanner,
+private fun processImageProxy(
+    imageProxy: ImageProxy,
     vm: InventoryViewModel,
-    scope: kotlinx.coroutines.CoroutineScope,
-    onItemAdded: (String) -> Unit,
-    onFinish: () -> Unit
+    context: android.content.Context,
+    scope: CoroutineScope,
+    onItemAdded: (String) -> Unit
 ) {
-    val media = proxy.image ?: return proxy.close()
-    val image = InputImage.fromMediaImage(media, proxy.imageInfo.rotationDegrees)
+    val mediaImage = imageProxy.image ?: run {
+        imageProxy.close()
+        return
+    }
+
+    val image = InputImage.fromMediaImage(
+        mediaImage,
+        imageProxy.imageInfo.rotationDegrees
+    )
+
+    // Barcode recognition only
+    val options = BarcodeScannerOptions.Builder()
+        .setBarcodeFormats(
+            Barcode.FORMAT_EAN_13,
+            Barcode.FORMAT_EAN_8,
+            Barcode.FORMAT_UPC_A,
+            Barcode.FORMAT_UPC_E
+        )
+        .build()
+
+    val scanner = BarcodeScanning.getClient(options)
 
     scanner.process(image)
-        .addOnSuccessListener { results ->
-            if (results.isNotEmpty()) {
-                val barcode = results.first()
-                val code = barcode.rawValue ?: ""
+        .addOnSuccessListener { barcodes ->
+            for (barcode in barcodes) {
+                val raw = barcode.rawValue ?: continue
+                if (raw == lastHandledCode) continue
+                lastHandledCode = raw
 
-                Log.d("SCAN", "Found barcode: $code")
+                Log.d("Scan", "Scanned: $raw")
 
-                val name = when {
-                    code.startsWith("47") -> "Eggs"
-                    code.startsWith("88") -> "Milk"
-                    else -> "Unknown Item"
-                }
-
+                // Call OFF + local database
                 scope.launch {
-                    vm.addItem(
-                        FoodItem(
-                            name = name,
-                            expiryDate = LocalDate.now().plusDays(7)
-                        )
-                    )
-                }
+                    val info = ProductLookup.lookupProduct(raw)
 
-                onItemAdded(name)
-                onFinish()
+                    if (info == null) {
+                        Toast.makeText(
+                            context,
+                            "Unknown product ($raw)",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        val expiry = LocalDate.now().plusDays(info.defaultShelfDays)
+                        vm.addItem(
+                            FoodItem(
+                                name = info.name,
+                                expiryDate = expiry,
+                                quantity = 1
+                            )
+                        )
+                        onItemAdded(info.name)
+                    }
+                }
             }
         }
+        .addOnFailureListener { e ->
+            Log.e("Scan", "Error: ${e.message}", e)
+        }
         .addOnCompleteListener {
-            proxy.close()
+            imageProxy.close()
         }
 }
+
 
 
 

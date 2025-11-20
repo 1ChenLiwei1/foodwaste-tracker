@@ -15,9 +15,6 @@ import androidx.navigation.NavController
 import com.example.foodwaste.data.model.Recipe
 import com.example.foodwaste.ui.InventoryViewModel
 
-/* ============================================================
-   食谱主页面（搜索 + 分类 + 推荐评分 + 跳转 AI）
-   ============================================================ */
 @Composable
 fun RecipesScreen(
     vm: InventoryViewModel,
@@ -29,12 +26,12 @@ fun RecipesScreen(
     var search by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf("All") }
 
-    /* ---------- 评分函数 ---------- */
+    //Scoring Function
     fun score(r: Recipe): Int =
         (5 - r.ingredients.count { it.lowercase() !in owned })
             .coerceIn(1, 5)
 
-    /* ---------- 数据过滤 ---------- */
+    //Data Filtering
     var filtered = allRecipes.filter {
         it.name.contains(search, ignoreCase = true)
     }
@@ -45,11 +42,11 @@ fun RecipesScreen(
 
     val sorted = filtered.sortedByDescending { score(it) }
 
-    /* ---------- UI ---------- */
+    //UI
     Column(
         Modifier.fillMaxSize().padding(16.dp)
     ) {
-        /* -------- 搜索框 + AI 按钮 -------- */
+        //Search box + AI button
         Row(Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = search,
@@ -70,15 +67,15 @@ fun RecipesScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        /* -------- 分类栏 -------- */
-        RecipeCategoryChips(
+        //Category Section
+                RecipeCategoryChips(
             selected = filter,
             onSelected = { filter = it }
         )
 
         Spacer(Modifier.height(12.dp))
 
-        /* -------- 列表 -------- */
+        //List
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(sorted) { recipe ->
                 val missing = recipe.ingredients.filter { it.lowercase() !in owned }
@@ -99,9 +96,7 @@ fun RecipesScreen(
     }
 }
 
-/* ============================================================
-   分类 Chips（唯一定义）
-   ============================================================ */
+// Chips
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RecipeCategoryChips(
@@ -129,9 +124,7 @@ fun RecipeCategoryChips(
     }
 }
 
-/* ============================================================
-   食谱卡片
-   ============================================================ */
+//   Recipe Cards
 @Composable
 fun RecipeCard(
     title: String,

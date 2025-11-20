@@ -2,14 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!--  权限部分 -->
-    <!-- 相机权限（用于扫码） -->
+    <!--  Permissions section -->
+    <!-- Camera permission (for scanning QR codes) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera.any" />
-    <!-- Android 13+ 通知权限（用于过期提醒） -->
+    <!-- Android 13+ Notification Permissions (for Expiry Reminders) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!--  可选：声明设备支持相机功能（扫码） -->
+    <!--  Declaration of device support for camera functionality (QR code scanning) -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -26,12 +26,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication">
 
-        <!-- ✅ 过期提醒接收器（广播） -->
+        <!-- Expiry Reminder Receiver (Broadcast) -->
         <receiver
             android:name=".receiver.ExpiryReceiver"
             android:exported="false" />
 
-        <!-- ✅ 主界面 Activity -->
+        <!-- Main Interface Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

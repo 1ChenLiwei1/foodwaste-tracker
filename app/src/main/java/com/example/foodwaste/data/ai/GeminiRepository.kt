@@ -18,13 +18,13 @@ class GeminiRepository {
 
         val prompt = """
             I have these ingredients: ${ingredients.joinToString(", ")}
-            Please generate 5 creative recipes I can cook.
+            Generate 5 creative recipes I can cook.
 
             For each recipe include:
             - Recipe name
-            - Required ingredients
-            - Step-by-step instructions
-            - Difficulty level
+            - Ingredients
+            - Instructions
+            - Difficulty
             - Cooking time
         """.trimIndent()
 
@@ -38,10 +38,9 @@ class GeminiRepository {
 
         val res = api.generate(apiKey, request)
 
-        return res.candidates.firstOrNull()
+        return res.candidates
+            .firstOrNull()
             ?.content?.parts?.firstOrNull()?.text
             ?: "No recipe generated."
     }
 }
-
-

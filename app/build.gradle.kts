@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.konan.properties.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -19,7 +21,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Gemini API Key
+        // ---- 可选：Gemini API Key（如果你做 AI 菜谱）----
         val geminiKey = project.findProperty("GEMINI_API_KEY") as String? ?: ""
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     }
@@ -37,6 +39,10 @@ android {
     kotlin {
         jvmToolchain(17)
     }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 }
 
 dependencies {
@@ -44,19 +50,15 @@ dependencies {
     implementation(libs.threetenabp)
     implementation("androidx.appcompat:appcompat:1.7.0")
 
-    // Jetpack Core
+    // Core + Compose
     implementation(libs.androidx.core.ktx)
-
-    // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation("androidx.compose.material:material-icons-extended")
-
-    // Activity Compose
     implementation(libs.androidx.activity.compose)
+    implementation("androidx.compose.material:material-icons-extended:1.7.5")
 
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -65,10 +67,11 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // Room
+    // Room + KSP
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.sqlite.jdbc)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
@@ -76,34 +79,38 @@ dependencies {
     // WorkManager
     implementation(libs.androidx.work.runtime)
 
-    // ML Kit Barcode
-    implementation(libs.mlkit.barcode)
-
     // CameraX
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
 
-    // Ktor HTTP Client (OpenFoodFacts)
+    // ML Kit
+    implementation(libs.mlkit.barcode)
+
+    // --- Ktor HTTP Client + JSON ---
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.kotlinx.serialization.json)
 
-    // Coil Image Loader
+    // Coil
     implementation("io.coil-kt:coil-compose:2.4.0")
 
-    // Retrofit (optional, used somewhere in your code)
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // Tests
+    testImplementation(libs.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // SQLite JDBC (Room schema verification)
-    implementation(libs.sqlite.jdbc)
+    // --- Retrofit + Gson ---
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.gson)
 
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
 
 

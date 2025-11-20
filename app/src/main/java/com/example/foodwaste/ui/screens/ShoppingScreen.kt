@@ -37,7 +37,7 @@ fun ShoppingScreen(vm: ShoppingViewModel) {
             color = MaterialTheme.colorScheme.primary
         )
 
-        // ------------------ 输入栏 ------------------
+        // Input field
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -65,7 +65,7 @@ fun ShoppingScreen(vm: ShoppingViewModel) {
             }
         }
 
-        // ------------------ 列表 ------------------
+        // List
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize()

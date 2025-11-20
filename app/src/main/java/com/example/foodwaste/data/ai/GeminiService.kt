@@ -14,7 +14,7 @@ interface GeminiService {
     ): GeminiResponse
 }
 
-// ---------- Data Classes ----------
+// ---------- Data Models ----------
 data class GeminiRequest(
     val contents: List<GeminiContent>
 )

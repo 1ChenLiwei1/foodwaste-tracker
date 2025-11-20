@@ -14,24 +14,23 @@ class InventoryViewModel(
     private val repository: FoodRepository
 ) : ViewModel() {
 
-    // 库存列表（Room 实时 Flow）
+    // Inventory List (Room Real-time Flow)
     val foodList: StateFlow<List<FoodItem>> =
         repository.observeAll()
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    // 添加或更新
+    // Add or update
     fun addItem(item: FoodItem) = viewModelScope.launch {
         repository.upsert(item)
     }
 
-    // 删除
+    // Delete
     fun deleteItem(item: FoodItem) = viewModelScope.launch {
         repository.delete(item)
     }
 
     val allRecipes = RecipeProvider.recipes
 
-    /** 返回完全可做的食谱 */
     fun recipesUserCanMake(): List<Recipe> {
         val owned = foodList.value.map { it.name.lowercase() }
         return allRecipes.filter { recipe ->
@@ -39,7 +38,6 @@ class InventoryViewModel(
         }
     }
 
-    /** 返回缺少材料的食谱 */
     fun recipesMissingIngredients(): List<Pair<Recipe, List<String>>> {
         val owned = foodList.value.map { it.name.lowercase() }
         return allRecipes.map { recipe ->
@@ -48,7 +46,6 @@ class InventoryViewModel(
         }
     }
 
-    // 清空库存
     fun clearAll() = viewModelScope.launch {
         repository.clearAll()
     }

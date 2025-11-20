@@ -25,7 +25,7 @@ class ExpiryReceiver : BroadcastReceiver() {
         triggerCheck(context)
     }
 
-    /** 供 Worker 或广播调用的统一入口 */
+    /** Unified entry point for Worker or broadcast calls */
     fun triggerCheck(context: Context) {
         //Log.d("ExpiryReceiver", "triggerCheck() called")
 

@@ -25,7 +25,7 @@ import com.example.foodwaste.ui.screens.*
 import com.example.foodwaste.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.launch
 
-// ---------------------- 路由定义 ----------------------
+// Route Definitions
 sealed class Dest(val route: String) {
     data object Inventory : Dest("inventory")
     data object Recipes : Dest("recipes")
@@ -33,7 +33,7 @@ sealed class Dest(val route: String) {
     data object Profile : Dest("profile")
 }
 
-// ---------------------- MainActivity ----------------------
+// MainActivity
 class MainActivity : ComponentActivity() {
 
     private val inventoryVM: InventoryViewModel by viewModels {
@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// ---------------------- UI Scaffold ----------------------
+// UI Scaffold
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoodWasteAppUI(
@@ -87,7 +87,7 @@ fun FoodWasteAppUI(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
 
-                        // -------- 左 1：库存 --------
+                        // Inventory
                         IconButton(onClick = {
                             nav.navigate(Dest.Inventory.route) {
                                 launchSingleTop = true
@@ -102,7 +102,7 @@ fun FoodWasteAppUI(
                             )
                         }
 
-                        // -------- 左 2：食谱 --------
+                        // Recipe
                         IconButton(onClick = {
                             nav.navigate(Dest.Recipes.route) {
                                 launchSingleTop = true
@@ -117,7 +117,7 @@ fun FoodWasteAppUI(
                             )
                         }
 
-                        // -------- 中间大按钮：扫码 --------
+                        // Scan the QR code
                         FloatingActionButton(
                             onClick = { nav.navigate("scan") },
                             containerColor = MaterialTheme.colorScheme.primary,
@@ -126,7 +126,7 @@ fun FoodWasteAppUI(
                             Icon(Icons.Default.CameraAlt, null, Modifier.size(32.dp))
                         }
 
-                        // -------- 右 1：购物清单 --------
+                        // Shopping list
                         IconButton(onClick = {
                             nav.navigate(Dest.Shopping.route) {
                                 launchSingleTop = true
@@ -141,7 +141,7 @@ fun FoodWasteAppUI(
                             )
                         }
 
-                        // -------- 右 2：个人中心 --------
+                        // My Account
                         IconButton(onClick = {
                             nav.navigate(Dest.Profile.route) {
                                 launchSingleTop = true
@@ -165,17 +165,17 @@ fun FoodWasteAppUI(
                 startDestination = Dest.Inventory.route,
                 modifier = Modifier.padding(inner)
             ) {
-                // 库存页
+                // Stock page
                 composable(Dest.Inventory.route) {
                     InventoryScreen(vm = inventoryVM)
                 }
 
-                // 食谱页
+                // Recipe Page
                 composable(Dest.Recipes.route) {
                     RecipesScreen(vm = inventoryVM, nav = nav)
                 }
 
-                // 购物清单页
+                // Shopping List Page
                 composable(Dest.Shopping.route) {
                     ShoppingScreen(vm = shoppingVM)
                 }
@@ -188,7 +188,7 @@ fun FoodWasteAppUI(
                     )
                 }
 
-                // 扫码页（用你原来的 ScanScreen 逻辑）
+                // Scan Code Page
                 composable("scan") {
                     val snackbar = remember { SnackbarHostState() }
                     val scope = rememberCoroutineScope()
@@ -212,7 +212,7 @@ fun FoodWasteAppUI(
                     }
                 }
 
-                // 食谱详情
+                // Recipe Details
                 composable("recipe_detail/{name}") { entry ->
                     val name = entry.arguments?.getString("name") ?: ""
                     RecipeDetailScreen(
@@ -222,7 +222,7 @@ fun FoodWasteAppUI(
                     )
                 }
 
-                // AI 菜谱页
+                // AI Recipe Page
                 composable("ai_recipes") {
                     AiRecipeScreen(vm = inventoryVM, onBack = { nav.popBackStack() })
                 }

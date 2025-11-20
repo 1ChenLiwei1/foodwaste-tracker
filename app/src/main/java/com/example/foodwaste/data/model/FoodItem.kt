@@ -10,7 +10,7 @@ data class FoodItem(
     val name: String,
     val quantity: Int,
     val category: String,
-    val expiryDate: LocalDate?,               // 可空，散装/耐储
+    val expiryDate: LocalDate?,
     val barcode: String? = null,
     val addedAt: LocalDate = LocalDate.now()
 )

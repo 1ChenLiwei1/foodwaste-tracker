@@ -17,11 +17,11 @@ import com.example.foodwaste.data.local.ShoppingDao
 
 class FoodWasteApp : Application() {
 
-    //  库存 Repository
+    //  Inventory Repository
     lateinit var repository: FoodRepository
         private set
 
-    //  购物清单 Repository（MainActivity 需要）
+    //   Shopping List Repository
     lateinit var shoppingRepository: ShoppingRepository
         private set
 
@@ -36,14 +36,14 @@ class FoodWasteApp : Application() {
             "foodwaste.db"
         ).build()
 
-        // 初始化两个仓库
+        // Initialise two warehouses
         repository = FoodRepository(db.foodItemDao())
-        shoppingRepository = ShoppingRepository(db.shoppingDao())  // ← ★ 就是这里
+        shoppingRepository = ShoppingRepository(db.shoppingDao())
 
-        // 启动周期性后台任务（每 15 分钟运行一次）
+        // Initiate periodic background tasks
         scheduleExpiryReminder()
 
-        // 启动一次性的测试任务（启动后 5 秒左右触发）
+        // Initiate a one-off test task
         debugTestWork()
     }
 
