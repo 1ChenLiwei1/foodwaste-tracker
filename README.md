@@ -101,19 +101,6 @@ Ensures JUnit configuration is functioning properly.
 
 ---
 
-## Demo Video (3–5 Minutes)
-
-The demo video showcases:
-- Inventory page with **Apple (expiring)** and **Egg (expired)**
-- Adding *Milk* manually  
-- Opening recipe list and recipe details  
-- Using AI recipe suggestion  
-- Updating the shopping list  
-- Viewing the user profile  
-- Scanning *Spring Onion* via barcode  
-
----
-
 ##  Requirements
 - Android Studio Koala or later  
 - Minimum SDK: **24**  
